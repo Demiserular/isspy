@@ -4,7 +4,9 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 
-TOKEN = os.environ["GH_TOKEN"]
+TOKEN = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+if not TOKEN:
+    raise RuntimeError("GH_TOKEN is not configured; add a GitHub token to the workflow secrets")
 STATE_FILE = "state.json"
 AUTHORIZATION_HEADER = "Bearer " + TOKEN
 
@@ -17,8 +19,16 @@ def gh(path):
             "X-GitHub-Api-Version": "2022-11-28"
         }
     )
-    with urllib.request.urlopen(req) as res:
-        return json.loads(res.read())
+    try:
+        with urllib.request.urlopen(req) as res:
+            return json.loads(res.read())
+    except urllib.error.HTTPError as error:
+        if error.code == 401:
+            raise RuntimeError(
+                "GitHub rejected GH_TOKEN (401 Unauthorized); rotate the repository secret "
+                "and ensure it has access to list repositories"
+            ) from error
+        raise
 
 def get_all_forks():
     forks, page = [], 1
