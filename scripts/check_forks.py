@@ -4,9 +4,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 
-TOKEN = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
-if not TOKEN:
-    raise RuntimeError("GH_TOKEN is not configured; add a GitHub token to the workflow secrets")
+TOKEN = os.environ["GH_TOKEN"]
 STATE_FILE = "state.json"
 AUTHORIZATION_HEADER = "Bearer " + TOKEN
 
@@ -19,16 +17,8 @@ def gh(path):
             "X-GitHub-Api-Version": "2022-11-28"
         }
     )
-    try:
-        with urllib.request.urlopen(req) as res:
-            return json.loads(res.read())
-    except urllib.error.HTTPError as error:
-        if error.code == 401:
-            raise RuntimeError(
-                "GitHub rejected GH_TOKEN (401 Unauthorized); rotate the repository secret "
-                "and ensure it has access to list repositories"
-            ) from error
-        raise
+    with urllib.request.urlopen(req) as res:
+        return json.loads(res.read())
 
 def get_all_forks():
     forks, page = [], 1
@@ -163,7 +153,13 @@ def main():
                 created_at = i['created_at'].replace('T', ' ').replace('Z', ' UTC')
                 obfuscated_url = i['html_url'].replace("github.com", "github\u200b.com")
                 is_maintainer = i["user"]["login"] in collaborators
-                tag = " **[M]**" if is_maintainer else ""
+                is_org_member = i.get("author_association") == "MEMBER"
+                tags = []
+                if is_maintainer:
+                    tags.append("[M]")
+                if is_org_member:
+                    tags.append("[O]")
+                tag = f" **{' '.join(tags)}**" if tags else ""
                 lines.append(
                     f"- Issue {i['number']}: {i['title']}{tag} - [{obfuscated_url}](https://href.li/?{i['html_url']}) - *{created_at}*"
                 )
