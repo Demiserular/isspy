@@ -8,6 +8,7 @@ TOKEN = os.environ["GH_TOKEN"]
 STATE_FILE = "state.json"
 AUTHORIZATION_HEADER = "Bearer " + TOKEN
 
+
 def gh(path):
     req = urllib.request.Request(
         f"https://api.github.com{path}",
