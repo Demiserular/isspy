@@ -6,12 +6,13 @@ from datetime import datetime, timezone
 
 TOKEN = os.environ["GH_TOKEN"]
 STATE_FILE = "state.json"
+AUTHORIZATION_HEADER = "Bearer " + TOKEN
 
 def gh(path):
     req = urllib.request.Request(
         f"https://api.github.com{path}",
         headers={
-            "Authorization": f"Bearer {TOKEN}",
+            "Authorization": AUTHORIZATION_HEADER,
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28"
         }
@@ -59,7 +60,7 @@ def create_issue(title, body):
         f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues",
         data=json.dumps({"title": title, "body": body}).encode(),
         headers={
-            "Authorization": f"Bearer {TOKEN}",
+            "Authorization": AUTHORIZATION_HEADER,
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28"
         },
@@ -92,7 +93,7 @@ def close_issue(issue_number):
         f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{issue_number}",
         data=json.dumps({"state": "closed"}).encode(),
         headers={
-            "Authorization": f"Bearer {TOKEN}",
+            "Authorization": AUTHORIZATION_HEADER,
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28"
         },
